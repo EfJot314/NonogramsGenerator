@@ -44,10 +44,11 @@ public class DrawingWindow implements Runnable {
                 tileButton.setMinSize(30,30);
                 tileButton.setMaxSize(30,30);
                 tileButton.setStyle("-fx-background-radius: 0; -fx-background-color: White; -fx-border-color: Black");
-                Vector2d position = new Vector2d(j,i);
+                int x = j;
+                int y = i;
                 tileButton.setOnAction(new EventHandler<ActionEvent>() {
                     @Override public void handle(ActionEvent e) {
-                        markTile(position);
+                        markTile(x,y);
                     }
                 });
                 tileList.add(tileButton);
@@ -74,9 +75,7 @@ public class DrawingWindow implements Runnable {
         drawStage.show();
     }
 
-    private void markTile(Vector2d position){
-        int x = position.x;;
-        int y = position.y;
+    private void markTile(int x, int y){
         int ind = x+y*this.height;
         Button markedTile = tileList.get(ind);
         //jezeli juz jest zaznaczony
@@ -92,59 +91,8 @@ public class DrawingWindow implements Runnable {
     }
 
     public void generateNonogram(){
-        //na razie w konsoli
-
-        //przechodze po osi pionowej (rzedach)
-        System.out.println("os pionowa:");
-        for(int i=0;i<height;i++){
-            //dla kazdego rzedu zliczam zaznaczone pola
-            int act = 0;
-            for(int j=0;j<width;j++){
-                //jesli cos tam jest to zwiekszam licznik
-                if(boardTab[j][i]){
-                    act += 1;
-                    //jesli jestem na ostatnim polu to to wypisuje
-                    if(j == width-1){
-                        System.out.print(act);
-                    }
-                }
-                //jesli nie, to jesli cos bylo to wypisuje a jak nie to tylko zeruje licznik
-                else{
-                    if(act > 0){
-                        System.out.print(act);
-                        System.out.print(" ");
-                    }
-                    act = 0;
-                }
-            }
-            System.out.println();
-        }
-
-        //przechodze po osi poziomej (kolumnach)
-        System.out.println("os pozioma:");
-        for(int j=0;j<width;j++){
-            //dla kazdej kolumny zliczam zaznaczone pola
-            int act = 0;
-            for(int i=0;i<height;i++){
-                //jesli cos tam jest to zwiekszam licznik
-                if(boardTab[j][i]){
-                    act += 1;
-                    //jesli jestem na ostatnim polu to to wypisuje
-                    if(i == height-1){
-                        System.out.print(act);
-                    }
-                }
-                //jesli nie, to jesli cos bylo to wypisuje a jak nie to tylko zeruje licznik
-                else{
-                    if(act > 0){
-                        System.out.print(act);
-                        System.out.print(" ");
-                    }
-                    act = 0;
-                }
-            }
-            System.out.println();
-        }
+        Nonogram non = new Nonogram(width, height);
+        non.createNonogramFromTable(boardTab);
     }
 
     @Override
