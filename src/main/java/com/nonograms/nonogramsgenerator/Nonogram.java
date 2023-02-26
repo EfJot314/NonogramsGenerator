@@ -69,6 +69,7 @@ public class Nonogram {
                 }
             }
         }
+        //kontrolne println-y
         System.out.println(rowList[3]);
         System.out.println(colList[2]);
     }
