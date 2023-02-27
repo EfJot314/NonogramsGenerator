@@ -1,5 +1,7 @@
 package com.nonograms.nonogramsgenerator;
 
+import javafx.application.Platform;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -8,20 +10,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Nonogram {
+public class Nonogram implements Runnable{
 
     DrawingWindow window;
 
     int width, height;
 
+    final boolean[][] T;
+
     List<Integer>[] rowList, colList;
 
-    public Nonogram(DrawingWindow father, int width, int height){
+    public Nonogram(DrawingWindow father, int width, int height, boolean[][] tab){
 
         this.window = father;
 
         this.width = width;
         this.height = height;
+
+        this.T = tab;
 
     }
 
@@ -93,24 +99,29 @@ public class Nonogram {
 
 
 
-    public void createNonogramFromTable(boolean[][] tab){
+    private void createNonogramFromTable(){
 
-        this.rowList = this.createRowList(tab);
-        this.colList = this.createColList(tab);
+        this.rowList = this.createRowList(this.T);
+        this.colList = this.createColList(this.T);
 
         if(isUnique()){
             //zapis
             boolean success = save();
 
             if(success){
-                this.window.showLabel("Pomyslnie zapisano!");
+                Platform.runLater(() -> {
+                    this.window.showLabel("Pomyslnie zapisano!");
+                    this.window.killNonogram();
+                });
             }
 
         }
         else{
-            this.window.showLabel("Nonogram nie jest jednoznaczny!");
+            Platform.runLater(() -> {
+                this.window.showLabel("Nonogram nie jest jednoznaczny!");
+                this.window.killNonogram();
+            });
         }
-
     }
 
     private boolean[][] copyTab(boolean[][] tab){
@@ -124,6 +135,16 @@ public class Nonogram {
     }
 
     private int reku(boolean[][] tab, int x, int y){
+        String message = "Sprawdzanie jednoznaczności";
+        int nOfDots = (x+y)%7+1;
+        for(int i=0;i<nOfDots;i++){
+            message += ".";
+        }
+        String finalMessage = message;
+        Platform.runLater(() -> {
+            this.window.showLabel(finalMessage);
+        });
+
         //jezeli doszedlem na koniec rzedu
         if(x == width){
             //sprawdzam czy nowo powstaly rzad jest w porzadku
@@ -268,7 +289,6 @@ public class Nonogram {
         try {
             if (ImageIO.write(img, "png", new File("./nonogram_image.png")))
             {
-                System.out.println("Nonogram saved!");
                 return true;
             }
         } catch (IOException e) {
@@ -279,9 +299,8 @@ public class Nonogram {
     }
 
 
-
-
-
-
-
+    @Override
+    public void run() {
+        createNonogramFromTable();
+    }
 }

@@ -27,6 +27,9 @@ public class DrawingWindow implements Runnable {
 
     boolean[][] boardTab;
 
+    Thread nonogramThread;
+
+
     public DrawingWindow(int width, int height){
         this.width = width;
         this.height = height;
@@ -96,8 +99,20 @@ public class DrawingWindow implements Runnable {
     }
 
     public void generateNonogram(){
-        Nonogram non = new Nonogram(this, width, height);
-        non.createNonogramFromTable(boardTab);
+        showLabel("");
+
+        Nonogram non = new Nonogram(this, width, height, boardTab);
+
+        this.nonogramThread = new Thread(non);
+        this.nonogramThread.start();
+
+
+    }
+
+    public void killNonogram(){
+        if(this.nonogramThread != null){
+            this.nonogramThread.interrupt();
+        }
     }
 
     public void showLabel(String text){
