@@ -69,17 +69,93 @@ public class Nonogram {
                 }
             }
         }
-        //kontrolne println-y
-        System.out.println(rowList[3]);
-        System.out.println(colList[2]);
+
+        //zapis
+        save();
+
+
     }
 
 
     public void save(){
         int imgWidth = 1000;
         int imgHeight = 1000;
+        int tileSize = 30;
+        int defWidth = 3;
+        int incWidth = 7;
+
         BufferedImage img = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
+
+        //biale tlo
+        g.setColor(Color.WHITE);
+        g.fillRect(0,0,imgWidth, imgHeight);
+
+        //wyznaczanie przesuniecia obrazka
+        int maxRowLen = 0;
+        int maxColLen = 0;
+
+        for(int i=0;i<height;i++){
+            int cur = this.rowList[i].size();
+            if(cur > maxRowLen){
+                maxRowLen = cur;
+            }
+
+        }
+
+        for(int i=0;i<width;i++){
+            int cur = this.colList[i].size();
+            if(cur > maxColLen){
+                maxColLen = cur;
+            }
+        }
+
+        int deltaX = 10+maxRowLen*tileSize;
+        int deltaY = 10+maxColLen*tileSize;
+
+
+        //linie siatki
+        g.setColor(Color.BLACK);
+        g.setStroke(new BasicStroke(defWidth));
+        for(int i=0;i<=this.width;i++){
+            //pogrubianie co 5 linii
+            if(i % 5 == 0){
+                g.setStroke(new BasicStroke(incWidth));
+                g.drawLine(i*tileSize+deltaX, deltaY, i*tileSize+deltaX, height*tileSize+deltaY);
+                g.setStroke(new BasicStroke(defWidth));
+            }
+            else{
+                g.drawLine(i*tileSize+deltaX, deltaY, i*tileSize+deltaX, height*tileSize+deltaY);
+            }
+
+        }
+        for(int j=0;j<=this.height;j++){
+            //pogrubianie co 5 linii
+            if(j % 5 == 0){
+                g.setStroke(new BasicStroke(incWidth));
+                g.drawLine(deltaX, j*tileSize+deltaY, width*tileSize+deltaX, j*tileSize+deltaY);
+                g.setStroke(new BasicStroke(defWidth));
+            }
+            else{
+                g.drawLine(deltaX, j*tileSize+deltaY, width*tileSize+deltaX, j*tileSize+deltaY);
+            }
+        }
+
+        //linie numerkow
+        for(int i=0;i<width;i++){
+            int curSize = this.colList[i].size();
+            g.drawLine(i*tileSize+deltaX, deltaY, i*tileSize+deltaX, deltaY-curSize*tileSize);
+            g.drawLine((i+1)*tileSize+deltaX, deltaY, (i+1)*tileSize+deltaX, deltaY-curSize*tileSize);
+        }
+
+        for(int i=0;i<height;i++){
+            int curSize = this.rowList[i].size();
+            g.drawLine(deltaX, i*tileSize+deltaY, deltaX-curSize*tileSize, i*tileSize+deltaY);
+            g.drawLine(deltaX, (i+1)*tileSize+deltaY, deltaX-curSize*tileSize, (i+1)*tileSize+deltaY);
+        }
+
+
+        //zapisywanie obrazka
         try {
             if (ImageIO.write(img, "png", new File("./nonogram_image.png")))
             {

@@ -34,7 +34,7 @@ public class StartScreen extends Application {
     }
 
     public void startNewGeneration(){
-        DrawingWindow simWin = new DrawingWindow(5,5);
+        DrawingWindow simWin = new DrawingWindow(10,10);
         Thread newWidowThread = new Thread(simWin);
         newWidowThread.start();
     }
