@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -16,10 +17,11 @@ import java.util.List;
 
 public class DrawingWindow implements Runnable {
 
-
-
     int width, height;
     Stage drawStage;
+    VBox mainBox;
+
+    Label noticeLabel;
 
     List<Button> tileList = new ArrayList<>();
 
@@ -31,8 +33,11 @@ public class DrawingWindow implements Runnable {
 
         this.boardTab = new boolean[this.width][this.height];
 
-        VBox mainBox = new VBox();
-        mainBox.setAlignment(Pos.CENTER);
+        this.mainBox = new VBox();
+        this.mainBox.setAlignment(Pos.CENTER);
+
+        this.noticeLabel = new Label("");
+        this.mainBox.getChildren().add(this.noticeLabel);
 
         VBox board = new VBox();
         board.setAlignment(Pos.CENTER);
@@ -44,11 +49,11 @@ public class DrawingWindow implements Runnable {
                 tileButton.setMinSize(30,30);
                 tileButton.setMaxSize(30,30);
                 tileButton.setStyle("-fx-background-radius: 0; -fx-background-color: White; -fx-border-color: Black");
-                int x = j;
-                int y = i;
+                final int xi = j;
+                final int yi = i;
                 tileButton.setOnAction(new EventHandler<ActionEvent>() {
                     @Override public void handle(ActionEvent e) {
-                        markTile(x,y);
+                        markTile(xi,yi);
                     }
                 });
                 tileList.add(tileButton);
@@ -57,7 +62,7 @@ public class DrawingWindow implements Runnable {
             board.getChildren().add(row);
         }
 
-        mainBox.getChildren().add(board);
+        this.mainBox.getChildren().add(board);
 
         Button generateButton = new Button("Generate Nonogram!");
         generateButton.setOnAction(new EventHandler<ActionEvent>() {
@@ -66,9 +71,9 @@ public class DrawingWindow implements Runnable {
             }
         });
 
-        mainBox.getChildren().add(generateButton);
+        this.mainBox.getChildren().add(generateButton);
 
-        Scene scene = new Scene(mainBox, 700, 700);
+        Scene scene = new Scene(mainBox, 1300, 900);
 
         drawStage = new Stage();
         drawStage.setScene(scene);
@@ -76,7 +81,7 @@ public class DrawingWindow implements Runnable {
     }
 
     private void markTile(int x, int y){
-        int ind = x+y*this.height;
+        int ind = x+y*this.width;
         Button markedTile = tileList.get(ind);
         //jezeli juz jest zaznaczony
         if(boardTab[x][y]){
@@ -91,8 +96,12 @@ public class DrawingWindow implements Runnable {
     }
 
     public void generateNonogram(){
-        Nonogram non = new Nonogram(width, height);
+        Nonogram non = new Nonogram(this, width, height);
         non.createNonogramFromTable(boardTab);
+    }
+
+    public void showLabel(String text){
+        this.noticeLabel.setText(text);
     }
 
     @Override

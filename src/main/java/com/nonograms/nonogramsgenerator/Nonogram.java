@@ -10,46 +10,26 @@ import java.util.List;
 
 public class Nonogram {
 
+    DrawingWindow window;
+
     int width, height;
 
     List<Integer>[] rowList, colList;
 
-    public Nonogram(int width, int height){
+    public Nonogram(DrawingWindow father, int width, int height){
+
+        this.window = father;
+
         this.width = width;
         this.height = height;
 
-        this.rowList = new ArrayList[this.height];
-        this.colList = new ArrayList[this.width];
-
     }
 
-    public void createNonogramFromTable(boolean[][] tab){
-        //przechodze po kolumnach
-        for(int i=0;i<width;i++){
-            this.colList[i] = new ArrayList<>();
-            int act = 0;
-            for(int j=0;j<height;j++){
-                //jezeli pole jes zaznaczone to zwiekszam licznik
-                if(tab[i][j]){
-                    act += 1;
-                    //jelsi jest to ostatnie pole to zapisuje licznik do listy
-                    if(j == height-1){
-                        this.colList[i].add(act);
-                    }
-                }
-                //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
-                else{
-                    if(act > 0){
-                        this.colList[i].add(act);
-                    }
-                    act = 0;
-                }
-            }
-        }
-
+    private List<Integer>[] createRowList(boolean[][] tab){
+        List<Integer>[] rL = new ArrayList[this.height];
         //przechodze po wierszach
         for(int j=0;j<height;j++){
-            this.rowList[j] = new ArrayList<>();
+            rL[j] = new ArrayList<>();
             int act = 0;
             for(int i=0;i<width;i++){
                 //jezeli pole jest zaznaczone to zwiekszam licznik
@@ -57,30 +37,137 @@ public class Nonogram {
                     act += 1;
                     //jelsi jest to ostatnie pole to zapisuje licznik do listy
                     if(i == width-1){
-                        this.rowList[j].add(act);
+                        rL[j].add(act);
                     }
                 }
                 //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
                 else{
                     if(act > 0){
-                        this.rowList[j].add(act);
+                        rL[j].add(act);
                     }
                     act = 0;
                 }
             }
         }
+        return rL;
+    }
 
-        //zapis
-        save();
+    private List<Integer>[] createColList(boolean[][] tab){
+        List<Integer>[] cL = new ArrayList[this.width];
+        //przechodze po kolumnach
+        for(int i=0;i<width;i++){
+            cL[i] = new ArrayList<>();
+            int act = 0;
+            for(int j=0;j<height;j++){
+                //jezeli pole jest zaznaczone to zwiekszam licznik
+                if(tab[i][j]){
+                    act += 1;
+                    //jelsi jest to ostatnie pole to zapisuje licznik do listy
+                    if(j == height-1){
+                        cL[i].add(act);
+                    }
+                }
+                //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
+                else{
+                    if(act > 0){
+                        cL[i].add(act);
+                    }
+                    act = 0;
+                }
+            }
+        }
+        return cL;
+    }
 
-
+    private boolean areListsEqual(List<Integer> a, List<Integer> b){
+        if(a.size() != b.size()){
+            return false;
+        }
+        for(int i=0;i<a.size();i++){
+            if(a.get(i) != b.get(i)){
+                return false;
+            }
+        }
+        return true;
     }
 
 
-    public void save(){
-        int imgWidth = 1000;
-        int imgHeight = 1000;
-        int tileSize = 30;
+
+    public void createNonogramFromTable(boolean[][] tab){
+
+        this.rowList = this.createRowList(tab);
+        this.colList = this.createColList(tab);
+
+        if(isUnique()){
+            //zapis
+            boolean success = save();
+
+            if(success){
+                this.window.showLabel("Pomyslnie zapisano!");
+            }
+
+        }
+        else{
+            this.window.showLabel("Nonogram nie jest jednoznaczny!");
+        }
+
+    }
+
+    private boolean[][] copyTab(boolean[][] tab){
+        boolean[][] tap = new boolean[width][height];
+        for(int i=0;i<width;i++){
+            for(int j=0;j<height;j++){
+                tap[i][j] = tab[i][j];
+            }
+        }
+        return tap;
+    }
+
+    private int reku(boolean[][] tab, int x, int y){
+        //jezeli doszedlem na koniec rzedu
+        if(x == width){
+            //sprawdzam czy nowo powstaly rzad jest w porzadku
+            if(!areListsEqual(createRowList(tab)[y], this.rowList[y])){
+                //jesli nie to od razu odrzucam ten model
+                return 0;
+            }
+            //zeruje x (czyli przechodze znow na lewa strone) i zwiekszajac y przechodze do kolejnego rzedu
+            x = 0;
+            y += 1;
+            //jesli dotarlem do konca obrazka
+            if(y == height){
+                //sprawdzam czy kolumny sie zgadzaja, jesli tak to zwracam 1 znaleziona kombinacje, a przy choc jednej blednej kolumnie odrzucam te kombinacje
+                List<Integer>[] cL = createColList(tab);
+                for(int i=0;i<height;i++){
+                    if(!areListsEqual(cL[i], this.colList[i])){
+                        return 0;
+                    }
+                }
+                return 1;
+            }
+        }
+        //jesli jestem gdzies w srodku rzedu to ide dalej wywolujac sie rekurencyjnie dla dwoch mozliwych polozen
+        int toReturn = 0;
+        toReturn += reku(copyTab(tab), x+1, y);
+        tab[x][y] = true;
+        toReturn += reku(copyTab(tab), x+1, y);
+        return toReturn;
+    }
+
+    public boolean isUnique(){
+        boolean[][] tab = new boolean[this.width][this.height];
+
+        int nOfOptions = reku(tab,0,0);
+
+        return (nOfOptions == 1);
+    }
+
+
+    public boolean save(){
+        int imgWidth = 2000;
+        int imgHeight = 2000;
+        int tileSize = 50;
+        float fontSize = 25f;
         int defWidth = 3;
         int incWidth = 7;
 
@@ -154,17 +241,44 @@ public class Nonogram {
             g.drawLine(deltaX, (i+1)*tileSize+deltaY, deltaX-curSize*tileSize, (i+1)*tileSize+deltaY);
         }
 
+        //numerki
+        g.setFont(g.getFont().deriveFont(fontSize));
+        for(int i=0;i<width;i++){
+            int curSize = this.colList[i].size();
+            for(int j=0;j<curSize;j++){
+                String toShow = this.colList[i].get(j).toString();
+                int textWidth = g.getFontMetrics().stringWidth(toShow);
+                int textHeight = g.getFontMetrics().getHeight();
+                g.drawString(toShow, i*tileSize+(tileSize-textWidth)/2+deltaX, deltaY-(curSize-1)*tileSize+j*tileSize-(tileSize-textHeight)/2);
+            }
+        }
+
+        for(int i=0;i<height;i++){
+            int curSize = this.rowList[i].size();
+            for(int j=0;j<curSize;j++){
+                String toShow = this.rowList[i].get(j).toString();
+                int textWidth = g.getFontMetrics().stringWidth(toShow);
+                int textHeight = g.getFontMetrics().getHeight();
+                g.drawString(toShow, deltaX-curSize*tileSize+j*tileSize+(tileSize-textWidth)/2, (i+1)*tileSize+deltaY-(tileSize-textHeight)/2);
+            }
+        }
+
 
         //zapisywanie obrazka
         try {
             if (ImageIO.write(img, "png", new File("./nonogram_image.png")))
             {
                 System.out.println("Nonogram saved!");
+                return true;
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
+        return false;
     }
+
+
 
 
 
