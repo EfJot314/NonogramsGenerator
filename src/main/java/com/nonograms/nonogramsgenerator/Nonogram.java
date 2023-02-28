@@ -15,45 +15,78 @@ public class Nonogram implements Runnable{
     DrawingWindow window;
 
     int width, height;
+    boolean checkUniq;
 
     final boolean[][] T;
 
     List<Integer>[] rowList, colList;
 
-    public Nonogram(DrawingWindow father, int width, int height, boolean[][] tab){
+    public Nonogram(DrawingWindow father, int width, int height, boolean[][] tab, boolean checkUniq){
 
         this.window = father;
 
         this.width = width;
         this.height = height;
 
+        this.checkUniq = checkUniq;
+
         this.T = tab;
 
     }
+
+    private List<Integer> createSingleRowList(boolean[][] tab, int j){
+        List<Integer> srL = new ArrayList();
+        int act = 0;
+        for(int i=0;i<width;i++){
+            //jezeli pole jest zaznaczone to zwiekszam licznik
+            if(tab[i][j]){
+                act += 1;
+                //jelsi jest to ostatnie pole to zapisuje licznik do listy
+                if(i == width-1){
+                    srL.add(act);
+                }
+            }
+            //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
+            else{
+                if(act > 0){
+                    srL.add(act);
+                }
+                act = 0;
+            }
+        }
+        return srL;
+    }
+
+    private List<Integer> createSingleColList(boolean[][] tab, int i){
+        List<Integer> scL = new ArrayList();
+        int act = 0;
+        for(int j=0;j<height;j++){
+            //jezeli pole jest zaznaczone to zwiekszam licznik
+            if(tab[i][j]){
+                act += 1;
+                //jelsi jest to ostatnie pole to zapisuje licznik do listy
+                if(j == height-1){
+                    scL.add(act);
+                }
+            }
+            //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
+            else{
+                if(act > 0){
+                    scL.add(act);
+                }
+                act = 0;
+            }
+        }
+        return scL;
+    }
+
+
 
     private List<Integer>[] createRowList(boolean[][] tab){
         List<Integer>[] rL = new ArrayList[this.height];
         //przechodze po wierszach
         for(int j=0;j<height;j++){
-            rL[j] = new ArrayList<>();
-            int act = 0;
-            for(int i=0;i<width;i++){
-                //jezeli pole jest zaznaczone to zwiekszam licznik
-                if(tab[i][j]){
-                    act += 1;
-                    //jelsi jest to ostatnie pole to zapisuje licznik do listy
-                    if(i == width-1){
-                        rL[j].add(act);
-                    }
-                }
-                //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
-                else{
-                    if(act > 0){
-                        rL[j].add(act);
-                    }
-                    act = 0;
-                }
-            }
+            rL[j] = createSingleRowList(tab, j);
         }
         return rL;
     }
@@ -62,39 +95,9 @@ public class Nonogram implements Runnable{
         List<Integer>[] cL = new ArrayList[this.width];
         //przechodze po kolumnach
         for(int i=0;i<width;i++){
-            cL[i] = new ArrayList<>();
-            int act = 0;
-            for(int j=0;j<height;j++){
-                //jezeli pole jest zaznaczone to zwiekszam licznik
-                if(tab[i][j]){
-                    act += 1;
-                    //jelsi jest to ostatnie pole to zapisuje licznik do listy
-                    if(j == height-1){
-                        cL[i].add(act);
-                    }
-                }
-                //jesli w polu nic nie ma i licznik>0 to zapisuje licznik a potem go zeruje
-                else{
-                    if(act > 0){
-                        cL[i].add(act);
-                    }
-                    act = 0;
-                }
-            }
+            cL[i] = createSingleColList(tab, i);
         }
         return cL;
-    }
-
-    private boolean areListsEqual(List<Integer> a, List<Integer> b){
-        if(a.size() != b.size()){
-            return false;
-        }
-        for(int i=0;i<a.size();i++){
-            if(a.get(i) != b.get(i)){
-                return false;
-            }
-        }
-        return true;
     }
 
 
@@ -104,7 +107,35 @@ public class Nonogram implements Runnable{
         this.rowList = this.createRowList(this.T);
         this.colList = this.createColList(this.T);
 
-        if(isUnique()){
+        //jesli mam sprawdzic unikalosc to dopiero po jej sprawdzeniu ewentualnie zapisuje
+        if(this.checkUniq){
+            if(isUnique()){
+                //zapis
+                boolean success = save();
+
+                if(success){
+                    Platform.runLater(() -> {
+                        this.window.showLabel("Pomyslnie zapisano!");
+                        this.window.killNonogram();
+                    });
+                }
+                else{
+                    Platform.runLater(() -> {
+                        this.window.showLabel("Wystapil blad podczas zapisywania");
+                        this.window.killNonogram();
+                    });
+                }
+
+            }
+            else{
+                Platform.runLater(() -> {
+                    this.window.showLabel("Nonogram nie jest jednoznaczny!");
+                    this.window.killNonogram();
+                });
+            }
+        }
+        //jesli nie zgloszono porzeby sprawdzenia unikalnosci od razu zapisuje
+        else{
             //zapis
             boolean success = save();
 
@@ -114,14 +145,15 @@ public class Nonogram implements Runnable{
                     this.window.killNonogram();
                 });
             }
+            else{
+                Platform.runLater(() -> {
+                    this.window.showLabel("Wystapil blad podczas zapisywania");
+                    this.window.killNonogram();
+                });
+            }
+        }
 
-        }
-        else{
-            Platform.runLater(() -> {
-                this.window.showLabel("Nonogram nie jest jednoznaczny!");
-                this.window.killNonogram();
-            });
-        }
+
     }
 
     private boolean[][] copyTab(boolean[][] tab){
@@ -135,22 +167,39 @@ public class Nonogram implements Runnable{
     }
 
     private int reku(boolean[][] tab, int x, int y){
-        String message = "Sprawdzanie jednoznaczności";
-        int nOfDots = (x+y)%7+1;
-        for(int i=0;i<nOfDots;i++){
-            message += ".";
+        if(x*y % 100 == 0){
+            String message = "Sprawdzanie jednoznaczności";
+            int nOfDots = (x+y)%7+1;
+            for(int i=0;i<nOfDots;i++){
+                message += ".";
+            }
+            String finalMessage = message;
+            Platform.runLater(() -> {
+                this.window.showLabel(finalMessage);
+            });
         }
-        String finalMessage = message;
-        Platform.runLater(() -> {
-            this.window.showLabel(finalMessage);
-        });
+
 
         //jezeli doszedlem na koniec rzedu
         if(x == width){
-            //sprawdzam czy nowo powstaly rzad jest w porzadku
-            if(!areListsEqual(createRowList(tab)[y], this.rowList[y])){
-                //jesli nie to od razu odrzucam ten model
+            //jesli powstaly wiersz jest bledny to zwracam, ze tu nie znajde zadnego rozwiazania
+            if(!createSingleRowList(tab,y).equals(this.rowList[y])){
                 return 0;
+            }
+            //szybka kontrola kolumn
+            for(int i=0;i<width;i++){
+                List<Integer> cl = createSingleColList(tab, i);
+                if(cl.size() > 1){
+                    if(this.colList[i].size() < cl.size()){
+                        return 0;
+                    }
+                    for(int j=0;j<cl.size()-1;j++){
+                        if(cl.get(j) != this.colList[i].get(j)){
+                            return 0;
+                        }
+                    }
+                }
+
             }
             //zeruje x (czyli przechodze znow na lewa strone) i zwiekszajac y przechodze do kolejnego rzedu
             x = 0;
@@ -158,9 +207,8 @@ public class Nonogram implements Runnable{
             //jesli dotarlem do konca obrazka
             if(y == height){
                 //sprawdzam czy kolumny sie zgadzaja, jesli tak to zwracam 1 znaleziona kombinacje, a przy choc jednej blednej kolumnie odrzucam te kombinacje
-                List<Integer>[] cL = createColList(tab);
-                for(int i=0;i<height;i++){
-                    if(!areListsEqual(cL[i], this.colList[i])){
+                for(int i=0;i<width;i++){
+                    if(!createSingleColList(tab, i).equals(this.colList[i])){
                         return 0;
                     }
                 }
@@ -170,6 +218,11 @@ public class Nonogram implements Runnable{
         //jesli jestem gdzies w srodku rzedu to ide dalej wywolujac sie rekurencyjnie dla dwoch mozliwych polozen
         int toReturn = 0;
         toReturn += reku(copyTab(tab), x+1, y);
+        //jezeli juz z tej galezi jest wiecej niz jedno rozwiazanie to nie wywoluje juz kolejnej rekurencji
+        if(toReturn > 1){
+            return toReturn;
+        }
+        //druga rekurencja
         tab[x][y] = true;
         toReturn += reku(copyTab(tab), x+1, y);
         return toReturn;

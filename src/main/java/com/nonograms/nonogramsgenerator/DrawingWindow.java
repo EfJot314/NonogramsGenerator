@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -20,8 +21,8 @@ public class DrawingWindow implements Runnable {
     int width, height;
     Stage drawStage;
     VBox mainBox;
-
     Label noticeLabel;
+    CheckBox checkUniq;
 
     List<Button> tileList = new ArrayList<>();
 
@@ -67,6 +68,9 @@ public class DrawingWindow implements Runnable {
 
         this.mainBox.getChildren().add(board);
 
+        this.checkUniq = new CheckBox("Check uniqueness");
+        this.mainBox.getChildren().add(this.checkUniq);
+
         Button generateButton = new Button("Generate Nonogram!");
         generateButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent e) {
@@ -101,8 +105,9 @@ public class DrawingWindow implements Runnable {
     public void generateNonogram(){
         showLabel("");
 
-        Nonogram non = new Nonogram(this, width, height, boardTab);
+        Nonogram non = new Nonogram(this, width, height, boardTab, this.checkUniq.isSelected());
 
+        this.killNonogram();
         this.nonogramThread = new Thread(non);
         this.nonogramThread.start();
 
