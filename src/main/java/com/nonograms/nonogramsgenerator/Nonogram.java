@@ -19,18 +19,25 @@ public class Nonogram implements Runnable{
 
     final boolean[][] T;
 
+    int intInfo;
+
     List<Integer>[] rowList, colList;
 
-    public Nonogram(DrawingWindow father, int width, int height, boolean[][] tab, boolean checkUniq){
+    public Nonogram(DrawingWindow father, int width, int height, boolean[][] tab, String info){
 
         this.window = father;
 
         this.width = width;
         this.height = height;
 
-        this.checkUniq = checkUniq;
-
         this.T = tab;
+
+        if(info.equals("saving")){
+            this.intInfo = 0;
+        }
+        else if(info.equals("checking")){
+            this.intInfo = 1;
+        }
 
     }
 
@@ -101,58 +108,26 @@ public class Nonogram implements Runnable{
     }
 
 
+    public void checkIfIsUniq(){
+        if(isUnique()){
+            Platform.runLater(() -> {
+                this.window.showLabel("Nonogram jest unikalny!",1);
+            });
+        }
+        else {
+            Platform.runLater(() -> {
+                this.window.showLabel("Nonogram nie jest unikalny!",1);
+            });
+        }
+    }
+
+
+
 
     private void createNonogramFromTable(){
 
         this.rowList = this.createRowList(this.T);
         this.colList = this.createColList(this.T);
-
-        //jesli mam sprawdzic unikalosc to dopiero po jej sprawdzeniu ewentualnie zapisuje
-        if(this.checkUniq){
-            if(isUnique()){
-                //zapis
-                boolean success = save();
-
-                if(success){
-                    Platform.runLater(() -> {
-                        this.window.showLabel("Pomyslnie zapisano!");
-                        this.window.killNonogram();
-                    });
-                }
-                else{
-                    Platform.runLater(() -> {
-                        this.window.showLabel("Wystapil blad podczas zapisywania");
-                        this.window.killNonogram();
-                    });
-                }
-
-            }
-            else{
-                Platform.runLater(() -> {
-                    this.window.showLabel("Nonogram nie jest jednoznaczny!");
-                    this.window.killNonogram();
-                });
-            }
-        }
-        //jesli nie zgloszono porzeby sprawdzenia unikalnosci od razu zapisuje
-        else{
-            //zapis
-            boolean success = save();
-
-            if(success){
-                Platform.runLater(() -> {
-                    this.window.showLabel("Pomyslnie zapisano!");
-                    this.window.killNonogram();
-                });
-            }
-            else{
-                Platform.runLater(() -> {
-                    this.window.showLabel("Wystapil blad podczas zapisywania");
-                    this.window.killNonogram();
-                });
-            }
-        }
-
 
     }
 
@@ -175,7 +150,7 @@ public class Nonogram implements Runnable{
             }
             String finalMessage = message;
             Platform.runLater(() -> {
-                this.window.showLabel(finalMessage);
+                this.window.showLabel(finalMessage,1);
             });
         }
 
@@ -237,7 +212,12 @@ public class Nonogram implements Runnable{
     }
 
 
-    public boolean save(){
+    public void saveNonogram(){
+
+        Platform.runLater(() -> {
+            this.window.showLabel("Zapisywanie nonogramu...",0);
+        });
+
         int imgWidth = 2000;
         int imgHeight = 2000;
         int tileSize = 50;
@@ -342,18 +322,28 @@ public class Nonogram implements Runnable{
         try {
             if (ImageIO.write(img, "png", new File("./nonogram_image.png")))
             {
-                return true;
+                Platform.runLater(() -> {
+                    this.window.showLabel("Pomyslnie zapisano!",0);
+                });
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
+            Platform.runLater(() -> {
+                this.window.showLabel("Wystapil problem podczas zapisywania",0);
+            });
         }
-        return false;
+
     }
 
 
     @Override
     public void run() {
         createNonogramFromTable();
+        if(this.intInfo == 0){
+            saveNonogram();
+        }
+        else if(this.intInfo == 1){
+            checkIfIsUniq();
+        }
     }
 }

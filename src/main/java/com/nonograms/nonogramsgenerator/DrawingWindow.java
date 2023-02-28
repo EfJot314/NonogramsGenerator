@@ -1,6 +1,7 @@
 package com.nonograms.nonogramsgenerator;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -21,14 +22,16 @@ public class DrawingWindow implements Runnable {
     int width, height;
     Stage drawStage;
     VBox mainBox;
-    Label noticeLabel;
-    CheckBox checkUniq;
+    Label saveLabel;
+    Label uniqLabel;
 
     List<Button> tileList = new ArrayList<>();
 
     boolean[][] boardTab;
 
-    Thread nonogramThread;
+    Thread saveThread;
+    Thread uniqThread;
+
 
 
     public DrawingWindow(int width, int height){
@@ -40,8 +43,11 @@ public class DrawingWindow implements Runnable {
         this.mainBox = new VBox();
         this.mainBox.setAlignment(Pos.CENTER);
 
-        this.noticeLabel = new Label("");
-        this.mainBox.getChildren().add(this.noticeLabel);
+        this.saveLabel = new Label("Nonogram jest niezapisany!");
+        this.mainBox.getChildren().add(this.saveLabel);
+
+        this.uniqLabel = new Label("Nie sprawdzono unikalności nonogramu!");
+        this.mainBox.getChildren().add(this.uniqLabel);
 
         VBox board = new VBox();
         board.setAlignment(Pos.CENTER);
@@ -65,16 +71,21 @@ public class DrawingWindow implements Runnable {
             }
             board.getChildren().add(row);
         }
-
         this.mainBox.getChildren().add(board);
 
-        this.checkUniq = new CheckBox("Check uniqueness");
-        this.mainBox.getChildren().add(this.checkUniq);
 
-        Button generateButton = new Button("Generate Nonogram!");
+        Button checkUniqButton = new Button("Check uniqueness");
+        checkUniqButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent e) {
+                checkNonogramUniq();
+            }
+        });
+        this.mainBox.getChildren().add(checkUniqButton);
+
+        Button generateButton = new Button("Save Nonogram!");
         generateButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent e) {
-                generateNonogram();
+                saveNonogram();
             }
         });
 
@@ -102,26 +113,38 @@ public class DrawingWindow implements Runnable {
         }
     }
 
-    public void generateNonogram(){
-        showLabel("");
+    public void saveNonogram(){
 
-        Nonogram non = new Nonogram(this, width, height, boardTab, this.checkUniq.isSelected());
+        Nonogram non = new Nonogram(this, width, height, boardTab, "saving");
 
-        this.killNonogram();
-        this.nonogramThread = new Thread(non);
-        this.nonogramThread.start();
-
+        killNonogram(this.saveThread);
+        this.saveThread = new Thread(non);
+        this.saveThread.start();
 
     }
 
-    public void killNonogram(){
-        if(this.nonogramThread != null){
-            this.nonogramThread.interrupt();
+    public void checkNonogramUniq(){
+        Nonogram non = new Nonogram(this, width, height, boardTab, "checking");
+
+        killNonogram(this.uniqThread);
+        this.uniqThread = new Thread(non);
+        this.uniqThread.start();
+
+    }
+
+    public void killNonogram(Thread nonogramThread){
+        if(nonogramThread != null){
+            nonogramThread.interrupt();
         }
     }
 
-    public void showLabel(String text){
-        this.noticeLabel.setText(text);
+    public void showLabel(String text, int id){
+        if(id == 0){
+            this.saveLabel.setText(text);
+        }
+        else if(id == 1){
+            this.uniqLabel.setText(text);
+        }
     }
 
     @Override
